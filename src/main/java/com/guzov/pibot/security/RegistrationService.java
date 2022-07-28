@@ -20,7 +20,7 @@ public class RegistrationService {
     private static final ReentrantLock lock = new ReentrantLock();
     private final Map<String, UserInfo> userInfoByUserName = new HashMap<>();
     private String password;
-    private String authenticationStrategy;
+    private String authorizationStrategy;
     private int maxRegisteredUsers;
     private int maxRegistrationAttempts;
     private List<String> userNames;
@@ -29,10 +29,10 @@ public class RegistrationService {
         LOGGER.info("Initializing registration service");
         readConfig(properties);
         checkConfig();
-        LOGGER.info("Registration service is initialized with \"{}\" authentication strategy", authenticationStrategy);
-        if (Constants.AUTHENTICATION_STRATEGY_USERNAMES.equals(authenticationStrategy)) {
+        LOGGER.info("Registration service is initialized with \"{}\" authorization strategy", authorizationStrategy);
+        if (Constants.AUTHORIZATION_STRATEGY_USERNAMES.equals(authorizationStrategy)) {
             LOGGER.info("Registered usernames: {}", userNames);
-        } else if (Constants.AUTHENTICATION_STRATEGY_PASSWORD.equals(authenticationStrategy)) {
+        } else if (Constants.AUTHORIZATION_STRATEGY_PASSWORD.equals(authorizationStrategy)) {
             LOGGER.info(
                     "Maximum registered users: {}, maximum registration attempts: {}",
                     maxRegisteredUsers,
@@ -43,30 +43,30 @@ public class RegistrationService {
 
     private void checkConfig() {
         if (!userNamesStrategyCorrect() && !passwordStrategyCorrect()) {
-            throw new IllegalStateException("Authentication is not properly configured");
+            throw new IllegalStateException("Authorization is not properly configured");
         }
     }
 
     private boolean userNamesStrategyCorrect() {
-        return Constants.AUTHENTICATION_STRATEGY_USERNAMES.equals(authenticationStrategy) && !userNames.isEmpty();
+        return Constants.AUTHORIZATION_STRATEGY_USERNAMES.equals(authorizationStrategy) && !userNames.isEmpty();
     }
 
     private boolean passwordStrategyCorrect() {
-        return Constants.AUTHENTICATION_STRATEGY_PASSWORD.equals(authenticationStrategy) &&
+        return Constants.AUTHORIZATION_STRATEGY_PASSWORD.equals(authorizationStrategy) &&
                 maxRegisteredUsers > 0 &&
                 maxRegistrationAttempts > 0 &&
                 StringUtils.isNotBlank(password);
     }
 
     private void readConfig(Properties properties) {
-        authenticationStrategy = properties.getProperty(Constants.BOT_USER_AUTHENTICATION_STRATEGY_KEY);
-        if (authenticationStrategy.equals(Constants.AUTHENTICATION_STRATEGY_USERNAMES)) {
+        authorizationStrategy = properties.getProperty(Constants.BOT_USER_AUTHORIZATION_STRATEGY_KEY);
+        if (authorizationStrategy.equals(Constants.AUTHORIZATION_STRATEGY_USERNAMES)) {
             String concatenatedUserNames = properties.getProperty(Constants.ALLOWED_USERNAMES_KEY);
             if (StringUtils.isBlank(concatenatedUserNames)) {
-                throw new IllegalStateException("User names should be specified in selected authentication strategy");
+                throw new IllegalStateException("User names should be specified in selected authorization strategy");
             }
             userNames = getUserNames(concatenatedUserNames);
-        } else if (authenticationStrategy.equals(Constants.AUTHENTICATION_STRATEGY_PASSWORD)) {
+        } else if (authorizationStrategy.equals(Constants.AUTHORIZATION_STRATEGY_PASSWORD)) {
             password = properties.getProperty(Constants.BOT_USER_PASSWORD_KEY);
             maxRegisteredUsers = Integer.parseInt(properties.getProperty(Constants.MAX_REGISTERED_USERS_KEY));
             maxRegistrationAttempts = Integer.parseInt(properties.getProperty(Constants.USER_MAX_REGISTRATION_ATTEMPTS_KEY));
@@ -103,9 +103,9 @@ public class RegistrationService {
     }
 
     public RegistrationResult register(String userName, String password) {
-        if (authenticationStrategy.equals(Constants.AUTHENTICATION_STRATEGY_USERNAMES)) {
+        if (authorizationStrategy.equals(Constants.AUTHORIZATION_STRATEGY_USERNAMES)) {
             return RegistrationResult.NOT_SUPPORTED;
-        } else if (authenticationStrategy.equals(Constants.AUTHENTICATION_STRATEGY_PASSWORD)) {
+        } else if (authorizationStrategy.equals(Constants.AUTHORIZATION_STRATEGY_PASSWORD)) {
             UserInfo userInfo;
             if (userInfoByUserName.containsKey(userName)) {
                 userInfo = userInfoByUserName.get(userName);
@@ -136,7 +136,7 @@ public class RegistrationService {
                 return RegistrationResult.FAILURE;
             }
         } else {
-            throw new IllegalStateException("Selected authentication strategy is not supported");
+            throw new IllegalStateException("Selected authorization strategy is not supported");
         }
     }
 
@@ -157,13 +157,13 @@ public class RegistrationService {
     }
 
     public RegistrationStatus getRegistrationStatus(String userName) {
-        if (authenticationStrategy.equals(Constants.AUTHENTICATION_STRATEGY_USERNAMES)) {
+        if (authorizationStrategy.equals(Constants.AUTHORIZATION_STRATEGY_USERNAMES)) {
             if (userNames.contains(userName)) {
                 return RegistrationStatus.REGISTERED;
             } else {
                 return RegistrationStatus.NOT_REGISTERED;
             }
-        } else if (authenticationStrategy.equals(Constants.AUTHENTICATION_STRATEGY_PASSWORD)) {
+        } else if (authorizationStrategy.equals(Constants.AUTHORIZATION_STRATEGY_PASSWORD)) {
             UserInfo userInfo = userInfoByUserName.get(userName);
             if (userInfo != null && userInfo.getRegistrationStatus() != null) {
                 return userInfo.getRegistrationStatus();
@@ -171,7 +171,7 @@ public class RegistrationService {
                 return RegistrationStatus.NOT_REGISTERED;
             }
         } else {
-            throw new IllegalStateException("Selected authentication strategy is not supported");
+            throw new IllegalStateException("Selected authorization strategy is not supported");
         }
     }
 }

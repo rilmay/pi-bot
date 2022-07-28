@@ -27,7 +27,7 @@ public class CameraService {
     private final int framesInGif;
     private final int deviceNumber;
     private static CameraService instance;
-    public static final String VIDEO_EXTENSION = ".gif";
+    private static final String VIDEO_EXTENSION = ".gif";
     private static final ReentrantLock cameraLock = new ReentrantLock();
     private final double speed;
 
@@ -50,6 +50,7 @@ public class CameraService {
 
     public static void init(Properties properties) {
         lock.lock();
+        LOGGER.info("Initializing camera service");
         try {
             if (instance == null) {
                 instance = new CameraService(properties);
@@ -86,14 +87,16 @@ public class CameraService {
         return paintConverter.getBufferedImage(frame, 1);
     }
 
-    private String getFileName() {
-        return String.join("", System.getProperty("user.dir"), System.getProperty("file.separator"), String.valueOf(UUID.randomUUID()), VIDEO_EXTENSION);
+    private String getGeneratedFileName(String extension) {
+        return String.join(System.getProperty("file.separator"),
+                System.getProperty("user.dir"),
+                UUID.randomUUID() + extension);
     }
 
     public File getVideoGif() {
         cameraLock.lock();
         LOGGER.info("Taking a video");
-        String fileName = getFileName();
+        String fileName = getGeneratedFileName(VIDEO_EXTENSION);
         try (FrameGrabber grabber = new OpenCVFrameGrabber(deviceNumber);
              Java2DFrameConverter paintConverter = new Java2DFrameConverter();
              FileOutputStream outputStream = new FileOutputStream(fileName)) {
@@ -101,7 +104,6 @@ public class CameraService {
             GifEncoder gifEncoder = null;
             grabber.start();
             for (int i = 1; i <= framesInGif; i++) {
-                LOGGER.info("Taking a picture {} out of {}", i, framesInGif);
                 BufferedImage image = getBufferedImage(grabber, paintConverter);
                 long currentTime = System.currentTimeMillis();
                 lastFrameTime = lastFrameTime == null ?
@@ -113,14 +115,20 @@ public class CameraService {
                 long delay = currentTime - lastFrameTime;
                 long videoDelay = getGifDelay(delay);
                 lastFrameTime = currentTime;
-                LOGGER.info("Current photo delay {}, video delay {}", delay, videoDelay);
+                LOGGER.info(
+                        "Taking a picture {} out of {}. Current delay {}, finished video delay {}",
+                        i,
+                        framesInGif,
+                        delay,
+                        videoDelay
+                );
                 gifEncoder.addImage(convertImageToArray(image), getOptions(videoDelay));
             }
             gifEncoder.finishEncoding();
             LOGGER.info("Finished GIF encoding");
             return new File(fileName);
         } catch (IOException e) {
-            throw new IllegalStateException("Error while getting camera image");
+            throw new IllegalStateException("Error while getting camera image", e);
         } finally {
             cameraLock.unlock();
         }
