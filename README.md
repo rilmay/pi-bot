@@ -1,7 +1,7 @@
 # pi-bot
 Telegram bot, created for use in small home computers and do small home jobs;)
 
-##Current version available commands:
+## Current version available commands:
 
 - /register - user registration or allowed users selection (authorization for using pi bot)
 
@@ -9,7 +9,7 @@ Telegram bot, created for use in small home computers and do small home jobs;)
 
 - /video - taking a video in GIF format with connected usb cam
 
-##Usage
+## Usage
 
 First you need to register your bot in the official BotFather bot and get your new bot's telegram token. 
 It is recommended to change the bot commands to the commands that this application supports (this setting is available in BotFather). 
@@ -31,8 +31,8 @@ Not required
 
 *-d --data* 
 
-Data to resolve external variables if *--resolver* argument is set to *cli*
-(if resolver is set to *environment*, then all external properties will be found in 
+Data to resolve external variables when *--resolver* argument is set to *cli*
+(if resolver is set to *environment*, then all external properties will be searched in 
 environment variables)
 
 Example value: *TELEGRAM_TOKEN=abdfg13435,ALLOWED_USERS=@telegram_username@another_username*
@@ -41,7 +41,7 @@ Example value: *TELEGRAM_TOKEN=abdfg13435,ALLOWED_USERS=@telegram_username@anoth
 (in that case, *ALLOWED_USERNAMES* variable is required), if *AUTHORIZATION_STRATEGY* is set to *password*, 
 then *BOT_PASSWORD* variable is required.
 
-###List of all external variables:
+### List of all external variables:
 
 - *TELEGRAM_TOKEN*
 
